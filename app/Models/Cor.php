@@ -8,5 +8,5 @@ use Illuminate\Database\Eloquent\Model;
 class Cor extends Model
 {
     use HasFactory;
-    protected $table='cors';
+    protected $table = 'cor';
 }

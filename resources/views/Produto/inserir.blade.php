@@ -25,11 +25,23 @@
                     @endforeach
                 </select>
 
+                <label>Cor</label>
+                <select name="id_cor" style="margin-bottom: 10px">
+                    @foreach ($cores as $dado)
+                        <option value="{{ $dado["id"] }}">{{ $dado["cor"] }}</option>
+                    @endforeach
+                </select>
+
                 <label>Preço</label>
                 <input type="text" name="preco" style="margin-bottom: 10px" placeholder="">
 
                 <label>Quantidade</label>
                 <input type="text" name="quantidade" style="margin-bottom: 10px" placeholder="">
+
+
+                <label>URL da Imagem</label>
+                <input type="text" name="url_imagem" style="margin-bottom: 10px" placeholder="">
+
 
                 <label>Descrição</label>
                 <textarea id="editDesc" name="descricao" style="margin-bottom: 10px" placeholder=""></textarea>

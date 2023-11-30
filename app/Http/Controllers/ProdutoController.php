@@ -6,100 +6,95 @@ use Illuminate\Http\Request;
 use App\Models\Produto;
 use App\Models\Categoria;
 use App\Models\Marca;
-use App\Models\Cor;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
+
 
 class ProdutoController extends Controller
 {
-    public function index() {
+    public function index(){
+        //$produto = Produto::all()->toArray();
+        
+           $produtos = Produto::select("produto.id",
+                                       "produto.nome",
+                                       "produto.quantidade",
+                                       "produto.preco",
+                                       "categoria.nome AS cat",
+                                       "marca.nome as marca",
+                                       "produto.descricao")
+                                    ->join("categoria","categoria.id", "=", "produto.id_categoria")
+                                    ->join("marca","marca.id", "=", "produto.id_marca") 
+                                    ->orderBy("produto.id")                                       
+                                    ->get();
 
-        //$produtos = Produto::all()->toArray();
-
-        $produtos = Produto::select("produto.id",
-                                    "produto.nome",
-                                    "produto.quantidade",
-                                    "produto.preco",
-                                    "categoria.nome AS cat",
-                                    "marca.nome AS marc"
-                                    )
-                    ->join("categoria", "categoria.id", "=", "produto.id_categoria")
-                    ->join("marca", "marca.id", "=", "produto.id_marca")
-                    ->get();
-
-        return view("Produto.index",[
-            "produtos" => $produtos
-        ]);
+        return view("Produto.index",["produtos"=>$produtos]);
     }
 
-    public function inserir() {
-        $categorias = Categoria::all()->toArray();
-        $marcas = Marca::all()->toArray();
-        return view("Produto.inserir", [
-                                'categorias' => $categorias,
-                                'marcas' => $marcas,
-                            ]);
+    public function inserir(){
+        $categorias = Categoria::all()->toArray();  //select de categorias - laravel
+        $marcas = Marca::all()->toArray();      
+        return view("Produto.formulario",['categorias' => $categorias,'marcas' => $marcas]);        
     }
-
-    public function salvar_novo(Request $request) {
-
-        $produto = new Produto();
-
-        $produto->nome = $request->input("nome");
-        $produto->id_categoria = $request->input("id_categoria");
-        $produto->id_marca = $request->input("id_marca");
-        $produto->preco = $request->input("preco");
-        $produto->quantidade = $request->input("quantidade");
-
-        $produto->descricao = " ";
-
-        $produto->save();
-
-        return redirect()->route("produto.index");
-    }
-
-
 
     public function excluir($id){
         $produto = Produto::find($id);
-        if (!$produto) {
-            return redirect()->route('produto.index')->with('error', 'Produto não encontrada.');
-        }
-
         $produto->delete();
-
-        return redirect()->route('produto.index')->with('success', 'Produto excluida com sucesso.');
+        return redirect("/produto"); 
     }
+    
     public function alterar($id){
-        $produto = Produto::find($id);
-        $categoria = Categoria::find($produto['id_categoria']);
-        $marca = Marca::find($produto['id_marca']);
-        $categorias = Categoria::all()->toArray();
-        $marcas = Marca::all()->toArray();
-
-
-        if (!$produto) {
-            return redirect()->route('produto.index')->with('error', 'Produto não encontrada.');
-        }
-
-        return view('Produto.alterar', [
-            'produto'=> $produto,
-            'categoria' => $categoria,
-            'marca' => $marca,
-            'categorias' => $categorias,
-            'marcas' => $marcas,
-        ]);
+        $produto = Produto::find($id)->toArray();
+        $categorias = Categoria::all()->toArray();  //select de categorias - laravel
+        $marcas = Marca::all()->toArray(); 
+        return View("Produto.formulario",['produto'=>$produto,'categorias' => $categorias,'marcas' => $marcas]);             
     }
 
-    public function alterarProduto(Request $request, $id){
+  public function salvar_novo(Request $request)
+  {
+      $produto = new Produto();
+      
+
+      $produto->nome = $request->input("nome");
+      $produto->id_categoria = $request->input("id_categoria");
+      $produto->preco = $request->input("preco");
+      $produto->quantidade = $request->input("quantidade");
+      $produto->descricao = $request->input("descricao");
+      $produto->id_marca = $request->input("marca");
+  
+      // Upload e salvamento da imagem
+      if ($request->hasFile('imagem')) {    
+        $requestImage = $request->file('imagem');
+        $extension = $requestImage->extension();
+        $imageName = md5($requestImage->getClientOriginalName()) . "." . $extension;
+        $requestImage->move(public_path('img/produtos'), $imageName);
+        $produto->imagem = $imageName;          
+      }      
+      
+      $produto->save();      
+  
+      return redirect("/produto"); 
+  }  
+
+    public function salvar_update(Request $request){        
+        $id = $request->input("id");
         $produto = Produto::find($id);
-
-
         $produto->nome = $request->input("nome");
         $produto->id_categoria = $request->input("id_categoria");
-        $produto->id_marca = $request->input("id_marca");
         $produto->preco = $request->input("preco");
         $produto->quantidade = $request->input("quantidade");
-        $produto->save();
+        $produto->descricao = $request->input("descricao");
+        $produto->id_marca = $request->input("marca");
 
-        return redirect()->route('produto.index')->with('success', 'Produto editada com sucesso.');
+        if ($request->hasFile('imagem')) {    
+            $requestImage = $request->file('imagem');
+            $extension = $requestImage->extension();
+            $imageName = md5($requestImage->getClientOriginalName()) . "." . $extension;
+            $requestImage->move(public_path('img/produtos'), $imageName);
+            $produto->imagem = $imageName;          
+          }      
+
+
+        $produto->save();
+        return redirect("/produto"); 
     }
 }
